@@ -2,7 +2,7 @@
 
 Aplicación de recomendaciones de películas: Vue 3, Spring Boot 3, PostgreSQL y dos grafos bipartitos. MovieLens se importa desde `csv/` a PostgreSQL al primer inicio; las cuentas, ratings propios, favoritos y listas se guardan en tablas separadas.
 
-## Inicio local recomendado
+## Inicio local
 
 Requisitos: Docker Desktop con Compose. Desde la raíz del repo:
 
@@ -14,7 +14,7 @@ docker compose up --build
 
 Abrir <http://localhost:8088>. El primer arranque crea el esquema y carga MovieLens desde `csv/`; puede tardar un poco. PostgreSQL conserva sus datos en el volumen `postgres_data`.
 
-Para detener: `docker compose down`. **No uses `docker compose down -v`** salvo que quieras borrar la base y volver a importarla.
+Para detener: `docker compose down`. **No usar `docker compose down -v`** salvo que se desee borrar la base y volver a importarla.
 
 ## Estructura
 
