@@ -7,3 +7,4 @@ frontend/dist/
 frontend/.vite/
 *.log
 __pycache__/
+.deployed-revision

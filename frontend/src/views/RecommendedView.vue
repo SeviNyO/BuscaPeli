@@ -3,7 +3,7 @@ import {ref,watch} from 'vue'
 import MovieGrid from '../components/MovieGrid.vue'
 import {useMoviesStore} from '../stores/movies'
 import '../assets/styles/views.css'
-const store=useMoviesStore(),tabs=['Para ti','Afinidad','Por género'],tab=ref(tabs[0]),results=ref([]),reason=ref('')
+const store=useMoviesStore(),tabs=['Para ti','Por género'],tab=ref(tabs[0]),results=ref([]),reason=ref('')
 async function load(){
   try {
     if(tab.value==='Por género'){
@@ -12,7 +12,7 @@ async function load(){
       const result=await store.fetchRecommendations(favorite.id,'genre');results.value=result.items;reason.value=`Géneros compartidos con ${favorite.title}.`
     } else {
       const result=await store.fetchForMe();results.value=result.items
-      reason.value=result.cold_start?'Aún no hay suficientes calificaciones: mostramos las más populares.':'Ordenadas por costo de afinidad de menor a mayor.'
+      reason.value=result.cold_start?'Califica películas con 4 estrellas o más para conocerte mejor. Mientras tanto, te mostramos las más populares.':'Basadas en películas que te gustaron y en lo que disfrutaron otros usuarios con gustos similares.'
     }
   } catch(error){results.value=[];reason.value=error.message}
 }

@@ -1,0 +1,13 @@
+[Unit]
+Description=BuscaPeli deployment
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=docker
+WorkingDirectory=/home/ubuntu/BuscaPeli
+ExecStart=/usr/bin/bash /home/ubuntu/BuscaPeli/deploy/vm-redeploy.sh
+TimeoutStartSec=1800

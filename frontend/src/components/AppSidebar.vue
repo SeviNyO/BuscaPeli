@@ -2,59 +2,38 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
 import AppLogo from './AppLogo.vue'
-
-import homeIcon from '../assets/figma/f8e05.svg'
-import homeActive from '../assets/figma/d242d.svg'
-
-import sparklesIcon from '../assets/figma/2b44b.svg'
-import sparklesActive from '../assets/figma/48741.svg'
-
-import compassIcon from '../assets/figma/9e7b4.svg'
-import compassActive from '../assets/figma/9f1dd.svg'
-
-import listIcon from '../assets/figma/88a19.svg'
-import listActive from '../assets/figma/5c811.svg'
-
-import userIcon from '../assets/figma/91670.svg'
-import userActive from '../assets/figma/2b8b2.svg'
-
-import logoutIcon from '../assets/figma/0a1ad.svg'
+import NavigationIcon from './NavigationIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
 
-const emit = defineEmits(['logout', 'profile'])
+const emit = defineEmits(['logout'])
 
 const navigation = [
   {
     label: 'Home',
     path: '/app/home',
-    icon: homeIcon,
-    activeIcon: homeActive
+    icon: 'home'
   },
   {
     label: 'Recomendadas',
     path: '/app/recommended',
-    icon: sparklesIcon,
-    activeIcon: sparklesActive
+    icon: 'recommended'
   },
   {
     label: 'Descubrir',
     path: '/app/discover',
-    icon: compassIcon,
-    activeIcon: compassActive
+    icon: 'discover'
   },
   {
     label: 'Mis listas',
     path: '/app/lists',
-    icon: listIcon,
-    activeIcon: listActive
+    icon: 'lists'
   },
   {
     label: 'Mi perfil',
     path: '/app/profile',
-    icon: userIcon,
-    activeIcon: userActive
+    icon: 'profile'
   }
 ]
 
@@ -64,11 +43,6 @@ function isActive(path) {
 }
 
 function navigate(item) {
-  if (item.path === '/app/profile') {
-    emit('profile')
-    return
-  }
-
   router.push(item.path)
 }
 
@@ -94,13 +68,7 @@ function logout() {
         :aria-current="isActive(item.path) ? 'page' : undefined"
         @click="navigate(item)"
       >
-        <img
-          :src="isActive(item.path)
-            ? item.activeIcon
-            : item.icon"
-          alt=""
-          class="nav-icon"
-        />
+        <NavigationIcon :name="item.icon" class="nav-icon" />
 
         <span>{{ item.label }}</span>
       </button>
@@ -113,11 +81,7 @@ function logout() {
       class="logout"
       @click="logout"
     >
-      <img
-        :src="logoutIcon"
-        alt=""
-        class="nav-icon"
-      />
+      <NavigationIcon name="logout" class="nav-icon" />
 
       <span>Cerrar sesión</span>
     </button>
@@ -210,4 +174,3 @@ function logout() {
   color: var(--color-text-primary);
 }
 </style>
-

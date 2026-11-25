@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import MovieGrid from '../components/MovieGrid.vue'
+import NavigationIcon from '../components/NavigationIcon.vue'
 import { useMoviesStore } from '../stores/movies'
 import '../assets/styles/views.css'
 
@@ -32,11 +33,11 @@ onMounted(async () => {
 
 <template>
   <div class="view">
-    <section v-if="featured" class="hero">
+    <section v-if="featured" class="hero" :style="featured.backdrop_url || featured.poster_url ? {backgroundImage:`linear-gradient(90deg,#101116 25%,#101116aa),url(${featured.backdrop_url || featured.poster_url})`,backgroundSize:'cover',backgroundPosition:'center'} : {}">
       <span class="eyebrow">RECOMENDADA PARA TI</span><h1>{{featured.title}}</h1>
       <div class="actions"><span class="rating-text">★ {{featured.rating?.toFixed(1)}}</span><span>{{featured.year}}</span><span>{{featured.genres?.join(' · ')}}</span></div>
       <p>{{featured.overview || 'Una recomendación basada en tus calificaciones y en las comunidades globales de usuarios.'}}</p>
-      <div class="actions"><button class="btn-primary" @click="router.push(`/app/movies/${featured.id}`)">Ver detalles</button><button class="btn-secondary" @click="store.toggleSave(featured)">{{store.savedIds.includes(featured.id)?'Quitar de mi lista':'Agregar a mi lista'}}</button></div>
+      <div class="actions"><button class="btn-primary" @click="router.push(`/app/movies/${featured.id}`)">Ver detalles</button><button class="btn-secondary favorite-action" @click="store.toggleSave(featured)"><NavigationIcon name="heart" class="action-icon" :class="{filled:store.savedIds.includes(featured.id)}" />{{store.savedIds.includes(featured.id)?'Quitar de favoritos':'Agregar a favoritos'}}</button></div>
     </section>
     <MovieGrid title="Recomendadas para ti" :movies="personalized" size="S" :columns="6" show-more :saved-ids="store.savedIds" @save="store.toggleSave" @view-more="router.push('/app/recommended')" />
     <MovieGrid title="Más populares" :movies="popular" size="S" :columns="6" :saved-ids="store.savedIds" @save="store.toggleSave" />
@@ -45,3 +46,9 @@ onMounted(async () => {
     <p v-if="store.error" class="error" role="alert">{{store.error}}</p>
   </div>
 </template>
+
+<style scoped>
+.favorite-action { display:inline-flex; align-items:center; gap:10px; }
+.action-icon { width:20px; height:20px; flex-shrink:0; }
+.action-icon.filled { fill:var(--color-brand-primary); }
+</style>

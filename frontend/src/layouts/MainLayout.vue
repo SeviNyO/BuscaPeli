@@ -7,6 +7,7 @@ import { useMoviesStore } from '../stores/movies'
 
 import AppSidebar from '../components/AppSidebar.vue'
 import AppHeader from '../components/AppHeader.vue'
+import NavigationIcon from '../components/NavigationIcon.vue'
 
 const router = useRouter()
 const store = useMoviesStore()
@@ -31,7 +32,6 @@ async function handleLogout() {
 <template>
   <div class="main-layout">
 
-    <!-- Fondo del menú en dispositivos móviles -->
     <Transition name="fade">
       <div
         v-if="sidebarOpen"
@@ -40,7 +40,6 @@ async function handleLogout() {
       ></div>
     </Transition>
 
-    <!-- Sidebar -->
     <div
       class="sidebar-container"
       :class="{ 'sidebar-open': sidebarOpen }"
@@ -48,10 +47,8 @@ async function handleLogout() {
       <AppSidebar @logout="handleLogout" />
     </div>
 
-    <!-- Área principal -->
     <div class="main-container">
 
-      <!-- Header -->
       <div class="header-container">
 
         <button
@@ -61,14 +58,13 @@ async function handleLogout() {
           :aria-expanded="sidebarOpen"
           @click="toggleSidebar"
         >
-          ☰
+          <NavigationIcon name="menu" class="menu-icon" />
         </button>
 
-        <AppHeader :username="username" />
+        <AppHeader :username="username" @profile="router.push('/app/profile')" />
 
       </div>
 
-      <!-- Contenido dinámico -->
       <main class="main-content">
         <RouterView />
       </main>
@@ -90,7 +86,6 @@ async function handleLogout() {
   color: var(--color-text-primary);
 }
 
-/* Sidebar */
 
 .sidebar-container {
   position: sticky;
@@ -104,7 +99,6 @@ async function handleLogout() {
   z-index: 30;
 }
 
-/* Contenedor principal */
 
 .main-container {
   display: flex;
@@ -115,7 +109,6 @@ async function handleLogout() {
   min-height: 100vh;
 }
 
-/* Header */
 
 .header-container {
   position: sticky;
@@ -131,7 +124,6 @@ async function handleLogout() {
   background: var(--color-bg-app);
 }
 
-/* Contenido de las vistas */
 
 .main-content {
   flex: 1;
@@ -142,7 +134,6 @@ async function handleLogout() {
   padding: 32px 40px 48px;
 }
 
-/* Menú responsive */
 
 .menu-toggle {
   display: none;
@@ -163,6 +154,7 @@ async function handleLogout() {
   color: var(--color-text-primary);
   font-size: 22px;
 }
+.menu-icon { width:22px; height:22px; }
 
 .mobile-overlay {
   position: fixed;
@@ -172,7 +164,6 @@ async function handleLogout() {
   background: rgba(0, 0, 0, 0.65);
 }
 
-/* Animaciones */
 
 .fade-enter-active,
 .fade-leave-active {
@@ -184,7 +175,6 @@ async function handleLogout() {
   opacity: 0;
 }
 
-/* Tablet y móvil */
 
 @media (max-width: 1024px) {
   .sidebar-container {

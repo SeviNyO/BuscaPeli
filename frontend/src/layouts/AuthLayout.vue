@@ -36,7 +36,6 @@ const columns = Array.from({ length: 7 }, (_, column) => ({
 <template>
   <main class="auth-layout">
 
-    <!-- Collage de fondo -->
     <div
       v-if="showCollage"
       class="collage"
@@ -70,7 +69,6 @@ const columns = Array.from({ length: 7 }, (_, column) => ({
       <div class="collage-overlay"></div>
     </div>
 
-    <!-- Contenido de la pantalla -->
     <div
       class="auth-content"
       :class="{ 'auth-card': showCard }"
@@ -99,7 +97,6 @@ const columns = Array.from({ length: 7 }, (_, column) => ({
   background: var(--color-bg-app);
 }
 
-/* Fondo */
 
 .collage {
   position: absolute;
@@ -152,7 +149,6 @@ const columns = Array.from({ length: 7 }, (_, column) => ({
   );
 }
 
-/* Contenido */
 
 .auth-content {
   position: relative;
@@ -167,7 +163,6 @@ const columns = Array.from({ length: 7 }, (_, column) => ({
   gap: 20px;
 }
 
-/* Tarjeta de autenticación */
 
 .auth-card {
   width: 460px;
@@ -182,7 +177,6 @@ const columns = Array.from({ length: 7 }, (_, column) => ({
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 
-/* Responsive */
 
 @media (max-width: 480px) {
   .auth-layout {

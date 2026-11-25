@@ -2,6 +2,8 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import MoviePoster from './MoviePoster.vue'
+import NavigationIcon from './NavigationIcon.vue'
 
 import glowS from '../assets/figma/da223.svg'
 import orbS from '../assets/figma/97736.svg'
@@ -11,8 +13,6 @@ import glowM from '../assets/figma/fdfb1.svg'
 import orbM from '../assets/figma/20eb5.svg'
 import ridgeM from '../assets/figma/04982.svg'
 
-import bookmarkIcon from '../assets/figma/1302e.svg'
-import starIcon from '../assets/figma/b13a4.svg'
 
 const props = defineProps({
   movie: {
@@ -95,20 +95,12 @@ function openMovie() {
     class="movie-card"
     :class="size === 'M' ? 'medium' : 'small'"
   >
-    <div
+    <MoviePoster
       class="poster"
+      :movie="movie"
       :style="posterStyle"
     >
-      <!-- Póster real cuando se conecte TMDB -->
-      <img
-        v-if="movie.poster"
-        :src="movie.poster"
-        :alt="movieTitle"
-        class="real-poster"
-      />
-
-      <!-- Ilustración original del componente Figma -->
-      <template v-else>
+      <template #fallback>
         <div class="glow">
           <img :src="assets.glow" alt="" />
         </div>
@@ -144,14 +136,14 @@ function openMovie() {
         :class="{ saved }"
         type="button"
         :aria-label="saved
-          ? 'Quitar de mi lista'
-          : 'Agregar a mi lista'"
+          ? 'Quitar de favoritos'
+          : 'Agregar a favoritos'"
         :aria-pressed="saved"
         @click.stop="emit('save', movie)"
       >
-        <img :src="bookmarkIcon" alt="" />
+        <NavigationIcon name="heart" class="favorite-icon" :class="{ filled: saved }" />
       </button>
-    </div>
+    </MoviePoster>
 
     <button
       class="movie-title"
@@ -163,11 +155,7 @@ function openMovie() {
     </button>
 
     <div class="metadata">
-      <img
-        :src="starIcon"
-        alt=""
-        class="star-icon"
-      />
+      <span class="star-icon" aria-hidden="true">★</span>
 
       <span class="rating">
         {{ rating }}
@@ -213,13 +201,6 @@ function openMovie() {
   overflow: hidden;
 
   border-radius: var(--poster-radius);
-}
-
-.real-poster {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .glow {
@@ -318,9 +299,13 @@ function openMovie() {
   border-radius: 16px;
 }
 
-.save-button img {
-  width: 16px;
-  height: 16px;
+.favorite-icon {
+  width: 19px;
+  height: 19px;
+  color: white;
+}
+.favorite-icon.filled {
+  fill: white;
 }
 
 .save-button.saved,
@@ -361,8 +346,9 @@ function openMovie() {
 
 .star-icon {
   width: 14px;
-  height: 14px;
   flex-shrink: 0;
+  color: var(--color-star);
+  font-size: 16px;
 }
 
 .rating {
@@ -382,4 +368,3 @@ function openMovie() {
   white-space: nowrap;
 }
 </style>
-

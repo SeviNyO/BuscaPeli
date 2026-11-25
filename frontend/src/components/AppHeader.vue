@@ -1,30 +1,20 @@
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import NavigationIcon from './NavigationIcon.vue'
 
-import searchIcon from '../assets/figma/89de3.svg'
-import bellIcon from '../assets/figma/a5a56.svg'
-import chevronIcon from '../assets/figma/21bd4.svg'
-
-const props = defineProps({
+defineProps({
   username: {
     type: String,
     default: 'paula'
   }
 })
 
-const emit = defineEmits([
-  'notifications',
-  'profile'
-])
+const emit = defineEmits(['profile'])
 
 const router = useRouter()
 const search = ref('')
-
-const initial = computed(() =>
-  props.username.charAt(0).toUpperCase()
-)
 
 function handleSearch() {
   const query = search.value.trim()
@@ -45,11 +35,10 @@ function handleSearch() {
       role="search"
       @submit.prevent="handleSearch"
     >
-      <img
-        :src="searchIcon"
-        alt=""
-        class="search-icon"
-      />
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.8" />
+        <path d="m16 16 4.5 4.5" />
+      </svg>
 
       <input
         v-model="search"
@@ -62,32 +51,18 @@ function handleSearch() {
     <div class="spacer"></div>
 
     <button
-      class="notification-button"
-      type="button"
-      aria-label="Notificaciones"
-      @click="emit('notifications')"
-    >
-      <img :src="bellIcon" alt="" />
-    </button>
-
-    <button
       class="profile-button"
       type="button"
+      aria-label="Abrir mi perfil"
       @click="emit('profile')"
     >
-      <div class="avatar">
-        {{ initial }}
-      </div>
+      <div class="avatar"><NavigationIcon name="profile" class="profile-icon" /></div>
 
       <span class="username">
         {{ username }}
       </span>
 
-      <img
-        :src="chevronIcon"
-        alt=""
-        class="chevron"
-      />
+      <NavigationIcon name="chevron-down" class="chevron" />
     </button>
   </header>
 </template>
@@ -157,25 +132,6 @@ function handleSearch() {
   flex: 1;
 }
 
-.notification-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-
-  border: none;
-  border-radius: 22px;
-  background: var(--color-bg-surface);
-}
-
-.notification-button img {
-  width: 20px;
-  height: 20px;
-}
-
 .profile-button {
   display: flex;
   align-items: center;
@@ -206,6 +162,7 @@ function handleSearch() {
   font-weight: 600;
   line-height: 22px;
 }
+.profile-icon { width: 20px; height: 20px; }
 
 .username {
   font-size: 14px;
@@ -234,4 +191,3 @@ function handleSearch() {
   }
 }
 </style>
-

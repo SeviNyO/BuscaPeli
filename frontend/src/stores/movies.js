@@ -108,6 +108,12 @@ export const useMoviesStore = defineStore('movies', () => {
     }, {})
     persist()
   }
+  async function refreshRatedMovies() {
+    const rows = await run(() => accountApi.getRatedMovies())
+    ratedMovies.value = rows.map(mapMovie)
+    ratings.value = Object.fromEntries(rows.map(row => [row.movie_id, Number(row.user_rating)]))
+    persist()
+  }
   async function login(email, password) {
     const result = await run(() => accountApi.login({ email, password }))
     authenticated.value = true; user.value = result; username.value = result.name
@@ -134,17 +140,18 @@ export const useMoviesStore = defineStore('movies', () => {
     persist()
   }
   async function rate(id, rating) {
-    if (rating <= 0) {
-      const next = { ...ratings.value }; delete next[id]; ratings.value = next
-      ratedMovies.value = ratedMovies.value.filter(item => item.id !== Number(id))
-      if (authenticated.value) await run(() => accountApi.deleteRating(id))
+    if (authenticated.value) {
+      if (rating <= 0) await run(() => accountApi.deleteRating(id))
+      else await run(() => accountApi.saveRating(id, rating))
+      await refreshRatedMovies()
     } else {
-      ratings.value = { ...ratings.value, [id]: rating }
-      if (authenticated.value) await run(() => accountApi.saveRating(id, rating))
-      const movie = catalog.value.find(item => item.id === Number(id))
-      if (movie && !ratedMovies.value.some(item => item.id === Number(id))) ratedMovies.value.push(movie)
+      const next = { ...ratings.value }
+      if (rating <= 0) delete next[id]
+      else next[id] = rating
+      ratings.value = next
+      ratedMovies.value = catalog.value.filter(movie => next[movie.id] > 0)
+      persist()
     }
-    persist()
   }
   async function toggleSave(movie) {
     const id = Number(movie.id ?? movie.movie_id)
@@ -172,5 +179,5 @@ export const useMoviesStore = defineStore('movies', () => {
 
   return { username, user, authenticated, sessionLoaded, catalog, favorites, watchlist, ratedMovies, ratings, tags, savedIds, watchIds, loading, error,
     fetchMovies, fetchPopular, fetchTopRated, fetchMovie, fetchRecommendations, fetchForMe, loadSession,
-    login, registerAccount, logout, rate, toggleSave, addTag, toggleWatch }
+    login, registerAccount, logout, rate, refreshRatedMovies, toggleSave, addTag, toggleWatch }
 })

@@ -43,6 +43,9 @@ public class AuthController {
     @PostMapping("/logout") public Map<String,String> logout(HttpSession session){session.invalidate();return Map.of("status","ok");}
     @GetMapping("/me") public Map<String,Object> me(HttpSession session){
         if(session.getAttribute("userId")==null) return Map.of("authenticated",false);
-        return Map.of("authenticated",true,"id",session.getAttribute("userId"),"name",session.getAttribute("displayName"));
+        String id=session.getAttribute("userId").toString();
+        List<Map<String,Object>> users=jdbc.queryForList("SELECT email,display_name FROM app_users WHERE user_id=?",UUID.fromString(id));
+        if(users.isEmpty()) { session.invalidate(); return Map.of("authenticated",false); }
+        return Map.of("authenticated",true,"id",id,"name",users.get(0).get("display_name"),"email",users.get(0).get("email"));
     }
 }

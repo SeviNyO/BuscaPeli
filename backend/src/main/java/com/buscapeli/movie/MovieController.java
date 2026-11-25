@@ -3,7 +3,6 @@ package com.buscapeli.movie;
 import com.buscapeli.tmdb.TmdbService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -11,7 +10,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/movies")
-@Validated
 public class MovieController {
     private final MovieService movies;
     private final TmdbService tmdb;

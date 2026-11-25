@@ -3,7 +3,6 @@ package com.buscapeli.recommendation.algorithms;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Selects the first N items from the affinity-ranked candidate sequence. */
 public final class GreedyTopN {
     private GreedyTopN() {}
     public static <T> List<T> select(List<T> ranked, int count) {

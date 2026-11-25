@@ -3,9 +3,6 @@
 <script setup>
 import { ref, computed } from 'vue'
 
-import filledStar from '../assets/figma/919fb.svg'
-import emptyStar from '../assets/figma/1dc29.svg'
-
 const props = defineProps({
   modelValue: {
     type: Number,
@@ -61,13 +58,9 @@ function previewRating(value) {
       @mouseenter="previewRating(star)"
       @click="selectRating(star)"
     >
-      <img
-        :src="star <= currentRating
-          ? filledStar
-          : emptyStar"
-        alt=""
-        class="star-icon"
-      />
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="star-icon" :class="{ filled: star <= currentRating }">
+        <path d="M12 2.5 14.9 8.4l6.5 1-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-1L12 2.5Z" />
+      </svg>
     </button>
   </div>
 </template>
@@ -100,6 +93,13 @@ function previewRating(value) {
   display: block;
   width: 26px;
   height: 26px;
+  fill: transparent;
+  stroke: var(--color-text-secondary);
+  stroke-width: 1.5;
+}
+.star-icon.filled {
+  fill: var(--color-star);
+  stroke: var(--color-star);
 }
 
 .star-button:disabled {

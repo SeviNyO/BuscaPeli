@@ -1,7 +1,8 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MovieGrid from '../components/MovieGrid.vue'
+import NavigationIcon from '../components/NavigationIcon.vue'
 import { useMoviesStore } from '../stores/movies'
 import '../assets/styles/views.css'
 
@@ -43,6 +44,7 @@ watch(() => route.query, value => {
   genre.value = genres.includes(value.genre) ? value.genre : 'Todos'
 }, { immediate: true })
 watch([query, genre, year, sort], () => { page.value = 1; load() })
+onMounted(() => load())
 
 async function loadMore() {
   page.value += 1
@@ -55,7 +57,7 @@ async function loadMore() {
     <div class="view-heading"><h1>Descubre películas</h1><p>Explora el catálogo por título, género y año.</p></div>
     <div class="filters">
       <div class="filter-row">
-        <input v-model="query" placeholder="Buscar por título…" aria-label="Buscar por título">
+        <div class="discover-search"><NavigationIcon name="search" class="discover-search-icon" /><input v-model="query" placeholder="Buscar por título…" aria-label="Buscar por título"></div>
         <input v-model="year" type="number" min="1900" max="2026" placeholder="Año de estreno" aria-label="Año de estreno">
         <select v-model="sort" aria-label="Ordenar"><option value="title">Título</option><option value="popular">Más calificadas</option><option value="top_rated">Mejor calificadas</option></select>
       </div>
@@ -68,3 +70,9 @@ async function loadMore() {
     <p v-if="store.error" class="error" role="alert">{{store.error}}</p>
   </div>
 </template>
+
+<style scoped>
+.discover-search { position:relative; flex:1; min-width:220px; }
+.discover-search-icon { position:absolute; top:50%; left:14px; transform:translateY(-50%); width:20px; height:20px; color:var(--color-text-secondary); pointer-events:none; }
+.discover-search input { padding-left:44px; }
+</style>

@@ -12,6 +12,7 @@ import DiscoverView from '../views/DiscoverView.vue'
 import MovieDetailView from '../views/MovieDetailView.vue'
 import MovieRecommendationsView from '../views/MovieRecommendationsView.vue'
 import MyListsView from '../views/MyListsView.vue'
+import ProfileView from '../views/ProfileView.vue'
 import { useMoviesStore } from '../stores/movies'
 
 const router = createRouter({
@@ -75,6 +76,11 @@ const router = createRouter({
           path: 'lists',
           name: 'my-lists',
           component: MyListsView
+        },
+        {
+          path: 'profile',
+          name: 'profile',
+          component: ProfileView
         }
       ]
     },
