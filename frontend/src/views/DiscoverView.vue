@@ -1,15 +1,70 @@
 <script setup>
-import {ref,computed,watch} from 'vue'
-import {useRoute} from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import MovieGrid from '../components/MovieGrid.vue'
-import {movies,genres,pick} from '../data/movies'
-import {useMoviesStore} from '../stores/movies'
+import { useMoviesStore } from '../stores/movies'
 import '../assets/styles/views.css'
-const route=useRoute(),store=useMoviesStore(),query=ref(''),genre=ref('Todos'),year=ref(''),sort=ref('default'),limit=ref(15)
-watch(()=>route.query,q=>{query.value=String(q.search||'');genre.value=genres.includes(q.genre)?q.genre:'Todos'},{immediate:true})
-watch([query,genre,year,sort],()=>limit.value=15)
-const ordered=[...pick(7,8,9,10,1,12,11,13,14,15,2,3,4,5,6,16,17,18,19)]
-const results=computed(()=>{let r=ordered.filter(m=>m.title.toLowerCase().includes(query.value.toLowerCase())&&(genre.value==='Todos'||m.genre===genre.value)&&(!year.value||m.year===Number(year.value)));if(sort.value==='rating')r.sort((a,b)=>b.rating-a.rating);if(sort.value==='year')r.sort((a,b)=>b.year-a.year);return r})
-const years=[...new Set(movies.map(m=>m.year))].sort((a,b)=>b-a)
+
+const genres = ['Todos', 'Acción', 'Aventura', 'Animación', 'Comedia', 'Crimen', 'Documental', 'Drama', 'Familia', 'Fantasía', 'Cine negro', 'Terror', 'Música', 'Misterio', 'Romance', 'Ciencia ficción', 'Suspenso', 'Guerra', 'Western']
+
+const route = useRoute()
+const store = useMoviesStore()
+const query = ref('')
+const genre = ref('Todos')
+const year = ref('')
+const sort = ref('title')
+const page = ref(1)
+const total = ref(0)
+const suggested = ref(false)
+let timer
+const results = computed(() => store.catalog)
+
+function load(append = false) {
+  clearTimeout(timer)
+  timer = setTimeout(async () => {
+    try {
+      const result = await store.fetchMovies({
+        search: query.value.trim() || undefined,
+        genre: genre.value === 'Todos' ? undefined : genre.value,
+        year: year.value || undefined,
+        sort: sort.value,
+        page: append ? page.value : 1,
+        pageSize: 100,
+      }, append)
+      total.value = result.total
+      suggested.value = result.suggested
+      if (!append) page.value = 1
+    } catch { total.value = 0 }
+  }, query.value ? 250 : 0)
+}
+
+watch(() => route.query, value => {
+  query.value = String(value.search || '')
+  genre.value = genres.includes(value.genre) ? value.genre : 'Todos'
+}, { immediate: true })
+watch([query, genre, year, sort], () => { page.value = 1; load() })
+
+async function loadMore() {
+  page.value += 1
+  load(true)
+}
 </script>
-<template><div class="view"><div class="view-heading"><h1>Descubre películas</h1><p>Explora el catálogo completo por título, género y año de estreno.</p></div><div class="filters"><div class="filter-row"><input v-model="query" placeholder="Buscar por título…" aria-label="Buscar por título"><select v-model="year" aria-label="Año de estreno"><option value="">Año de estreno</option><option v-for="y in years" :key="y" :value="y">{{y}}</option></select><select v-model="sort" aria-label="Ordenar"><option value="default">Ordenar: Catálogo</option><option value="rating">Ordenar: Puntuación</option><option value="year">Ordenar: Año</option></select></div><div class="chips"><button v-for="g in genres" :key="g" class="chip" :class="{active:genre===g}" @click="genre=g">{{g}}</button></div></div><p class="muted">Mostrando {{Math.min(limit,results.length)}} de {{results.length}} películas</p><MovieGrid :movies="results.slice(0,limit)" :saved-ids="store.savedIds" size="M" :columns="5" @save="store.toggleSave"/><button v-if="limit<results.length" class="btn-secondary center-button" @click="limit+=15">Cargar más películas</button></div></template>
+
+<template>
+  <div class="view">
+    <div class="view-heading"><h1>Descubre películas</h1><p>Explora el catálogo por título, género y año.</p></div>
+    <div class="filters">
+      <div class="filter-row">
+        <input v-model="query" placeholder="Buscar por título…" aria-label="Buscar por título">
+        <input v-model="year" type="number" min="1900" max="2026" placeholder="Año de estreno" aria-label="Año de estreno">
+        <select v-model="sort" aria-label="Ordenar"><option value="title">Título</option><option value="popular">Más calificadas</option><option value="top_rated">Mejor calificadas</option></select>
+      </div>
+      <div class="chips"><button v-for="g in genres" :key="g" class="chip" :class="{active:genre===g}" @click="genre=g">{{g}}</button></div>
+    </div>
+    <p v-if="suggested && results.length" class="muted">No encontramos una coincidencia exacta. ¿Quisiste decir <strong>{{results[0].title}}</strong>?</p>
+    <p class="muted">{{store.loading ? 'Buscando…' : `Mostrando ${results.length} de ${total} películas`}}</p>
+    <MovieGrid :movies="results" :saved-ids="store.savedIds" size="M" :columns="5" @save="store.toggleSave" />
+    <button v-if="results.length<total" class="btn-secondary center-button" @click="loadMore">Cargar más películas</button>
+    <p v-if="store.error" class="error" role="alert">{{store.error}}</p>
+  </div>
+</template>

@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-buscapeli}
+      POSTGRES_USER: ${POSTGRES_USER:-buscapeli}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-buscapeli-local}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-buscapeli} -d ${POSTGRES_DB:-buscapeli}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-buscapeli}
+      DATABASE_USER: ${POSTGRES_USER:-buscapeli}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-buscapeli-local}
+      MOVIELENS_DATA_DIR: /app/csv
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      MIN_COMMON_MOVIES: ${MIN_COMMON_MOVIES:-2}
+      TARGET_COMMUNITIES: ${TARGET_COMMUNITIES:-20}
+    volumes:
+      - ./csv:/app/csv:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${HTTP_PORT:-8088}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

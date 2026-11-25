@@ -1,16 +1,47 @@
 <script setup>
-import {useRouter} from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import MovieGrid from '../components/MovieGrid.vue'
-import {pick,genres,interstellar} from '../data/movies'
-import {useMoviesStore} from '../stores/movies'
+import { useMoviesStore } from '../stores/movies'
 import '../assets/styles/views.css'
-const router=useRouter(), store=useMoviesStore(), featured=pick(1)[0]
-const sections=[{title:'Películas recomendadas para ti',movies:pick(2,3,4,5,6,15)},{title:'A otros usuarios con gustos similares les gustó…',movies:pick(7,8,9,10,11,15)},{title:'Porque calificaste bien películas de ciencia ficción…',movies:pick(1,12,11,5,2,16)}]
+
+const router = useRouter()
+const store = useMoviesStore()
+const featured = ref(null)
+const personalized = ref([])
+const popular = ref([])
+const topRated = ref([])
+const genres = ['Acción', 'Comedia', 'Drama', 'Ciencia ficción', 'Animación', 'Suspenso']
+
+onMounted(async () => {
+  try {
+    popular.value = await store.fetchPopular(12)
+    topRated.value = await store.fetchTopRated(12)
+    const result = await store.fetchForMe()
+    personalized.value = result.items
+    featured.value = personalized.value[0] || popular.value[0]
+    if (featured.value) {
+      const details = await store.fetchMovie(featured.value.id)
+      featured.value = { ...featured.value, ...details, ...details.movie }
+    }
+  } catch {
+    featured.value = popular.value[0] || null
+  }
+})
 </script>
+
 <template>
-<div class="view">
- <section class="hero"><span class="eyebrow">DESTACADA PARA TI</span><h1>Interstellar</h1><div class="actions"><span class="rating-text">★ 4.7</span><span>2014</span><span>Ciencia ficción · Aventura</span><span>2 h 49 min</span></div><p>{{interstellar.synopsis}}</p><div class="actions"><button class="btn-primary" @click="router.push('/app/movies/1')">Ver detalles</button><button class="btn-secondary" @click="store.toggleSave(featured)">{{store.savedIds.includes(1)?'Quitar de mi lista':'Agregar a mi lista'}}</button></div></section>
- <MovieGrid v-for="section in sections" :key="section.title" :title="section.title" :movies="section.movies" size="S" :columns="6" show-more :saved-ids="store.savedIds" @save="store.toggleSave" @view-more="router.push('/app/recommended')" />
- <section class="section-stack"><h3>Explora otros géneros</h3><div class="chips"><button v-for="genre in ['Acción','Comedia','Drama','Ciencia ficción','Animación','Suspenso']" :key="genre" class="chip" @click="router.push({path:'/app/discover',query:{genre}})">{{genre}}</button></div></section>
-</div>
+  <div class="view">
+    <section v-if="featured" class="hero">
+      <span class="eyebrow">RECOMENDADA PARA TI</span><h1>{{featured.title}}</h1>
+      <div class="actions"><span class="rating-text">★ {{featured.rating?.toFixed(1)}}</span><span>{{featured.year}}</span><span>{{featured.genres?.join(' · ')}}</span></div>
+      <p>{{featured.overview || 'Una recomendación basada en tus calificaciones y en las comunidades globales de usuarios.'}}</p>
+      <div class="actions"><button class="btn-primary" @click="router.push(`/app/movies/${featured.id}`)">Ver detalles</button><button class="btn-secondary" @click="store.toggleSave(featured)">{{store.savedIds.includes(featured.id)?'Quitar de mi lista':'Agregar a mi lista'}}</button></div>
+    </section>
+    <MovieGrid title="Recomendadas para ti" :movies="personalized" size="S" :columns="6" show-more :saved-ids="store.savedIds" @save="store.toggleSave" @view-more="router.push('/app/recommended')" />
+    <MovieGrid title="Más populares" :movies="popular" size="S" :columns="6" :saved-ids="store.savedIds" @save="store.toggleSave" />
+    <MovieGrid title="Mejor calificadas" :movies="topRated" size="S" :columns="6" :saved-ids="store.savedIds" @save="store.toggleSave" />
+    <section class="section-stack"><h3>Explora otros géneros</h3><div class="chips"><button v-for="genre in genres" :key="genre" class="chip" @click="router.push({path:'/app/discover',query:{genre}})">{{genre}}</button></div></section>
+    <p v-if="store.error" class="error" role="alert">{{store.error}}</p>
+  </div>
 </template>

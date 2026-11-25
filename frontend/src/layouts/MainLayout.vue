@@ -1,12 +1,16 @@
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterView } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { useMoviesStore } from '../stores/movies'
 
 import AppSidebar from '../components/AppSidebar.vue'
 import AppHeader from '../components/AppHeader.vue'
 
-const username = ref('paula')
+const router = useRouter()
+const store = useMoviesStore()
+const username = computed(() => store.username)
 const sidebarOpen = ref(false)
 
 function toggleSidebar() {
@@ -17,10 +21,10 @@ function closeSidebar() {
   sidebarOpen.value = false
 }
 
-function handleLogout() {
+async function handleLogout() {
   closeSidebar()
-
-  // Aquí se conectará la autenticación del backend.
+  await store.logout()
+  router.push('/login')
 }
 </script>
 
@@ -212,4 +216,3 @@ function handleLogout() {
   }
 }
 </style>
-

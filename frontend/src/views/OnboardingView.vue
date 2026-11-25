@@ -1,17 +1,18 @@
 <script setup>
-import {ref,computed} from 'vue'
+import {ref,computed,watch} from 'vue'
 import {useRouter} from 'vue-router'
 import AuthLayout from '../layouts/AuthLayout.vue'
 import AppLogo from '../components/AppLogo.vue'
 import StarRating from '../components/StarRating.vue'
-import {movies,pick} from '../data/movies'
 import {useMoviesStore} from '../stores/movies'
 import '../assets/styles/views.css'
 const store=useMoviesStore(),router=useRouter(),query=ref('')
-const selected=ref(pick(7,1,17,18))
+const selected=ref([])
 const count=computed(()=>selected.value.filter(m=>store.ratings[m.id]>0).length)
-const results=computed(()=>query.value.trim()?movies.filter(m=>m.title.toLowerCase().includes(query.value.toLowerCase())&&!selected.value.some(s=>s.id===m.id)).slice(0,6):[])
-function add(movie){if(selected.value.length<5)selected.value.push(movie);query.value=''}
+const results=computed(()=>query.value.trim()?store.catalog.filter(m=>!selected.value.some(s=>s.id===m.id)).slice(0,8):[])
+let timer
+watch(query,value=>{clearTimeout(timer);timer=setTimeout(()=>{if(value.trim())store.fetchMovies({search:value.trim(),page:1,pageSize:12}).catch(()=>{})},250)})
+function add(movie){if(selected.value.length<5&&!selected.value.some(item=>item.id===movie.id))selected.value.push(movie);query.value=''}
 function remove(movie){selected.value=selected.value.filter(m=>m.id!==movie.id);store.rate(movie.id,0)}
 </script>
 <template>
@@ -20,7 +21,7 @@ function remove(movie){selected.value=selected.value.filter(m=>m.id!==movie.id);
   <AppLogo />
   <div class="view-heading"><h1>Califica 5 películas que hayas visto</h1><p>Así podremos encontrar películas que realmente te gusten. Has calificado {{count}} de 5.</p></div>
   <div class="progress"><span :style="{width:`${count*20}%`}"></span></div>
-  <div class="onboarding-search"><input v-model="query" placeholder="Buscar película por título…" :disabled="selected.length>=5" aria-label="Buscar película"><div v-if="results.length" class="onboarding-results"><button v-for="movie in results" :key="movie.id" @click="add(movie)">{{movie.title}} ({{movie.year}})</button></div></div>
+  <div class="onboarding-search"><input v-model="query" placeholder="Buscar película por título…" :disabled="selected.length>=5" aria-label="Buscar película"><div v-if="results.length" class="onboarding-results"><button v-for="movie in results" :key="movie.id" @click="add(movie)">{{movie.title}} ({{movie.year || 'año desconocido'}})</button></div></div>
   <div class="onboarding-cards">
    <div v-for="movie in selected" :key="movie.id" class="onboarding-item"><button class="onboarding-remove" aria-label="Quitar película" @click="remove(movie)">×</button><div class="onboarding-poster" :style="{backgroundImage:movie.gradient}"><span>{{movie.posterTitle}}</span></div><strong>{{movie.title}}</strong><StarRating :model-value="store.ratings[movie.id]||0" @update:model-value="store.rate(movie.id,$event)"/></div>
    <div v-for="i in 5-selected.length" :key="`empty-${i}`" class="empty-poster">＋<br>Busca y elige tu película</div>

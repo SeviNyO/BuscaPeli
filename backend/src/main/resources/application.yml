@@ -1,0 +1,26 @@
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${COOKIE_SECURE:false}
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/buscapeli}
+    username: ${DATABASE_USER:buscapeli}
+    password: ${DATABASE_PASSWORD:buscapeli}
+  flyway:
+    enabled: true
+  sql:
+    init:
+      mode: never
+app:
+  dataset-path: ${MOVIELENS_DATA_DIR:../csv}
+  min-user-ratings: ${MIN_USER_RATINGS:5}
+  top-movies-limit: ${TOP_MOVIES_LIMIT:1500}
+  min-recommendation-rating: ${MIN_RECOMMENDATION_RATING:4.0}
+  min-common-movies: ${MIN_COMMON_MOVIES:2}
+  target-communities: ${TARGET_COMMUNITIES:20}
+  tmdb-api-key: ${TMDB_API_KEY:}

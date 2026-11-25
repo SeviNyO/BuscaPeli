@@ -1,0 +1,18 @@
+import { api } from './client'
+
+export const register = payload => api('/auth/register', { method: 'POST', body: JSON.stringify(payload) })
+export const login = payload => api('/auth/login', { method: 'POST', body: JSON.stringify(payload) })
+export const logout = () => api('/auth/logout', { method: 'POST' })
+export const getSession = () => api('/auth/me')
+export const getRatings = () => api('/me/ratings')
+export const saveRating = (movie_id, rating) => api('/me/ratings', { method: 'PUT', body: JSON.stringify({ movie_id, rating }) })
+export const deleteRating = id => api(`/me/ratings/${id}`, { method: 'DELETE' })
+export const getFavorites = () => api('/me/favorites')
+export const getWatchlist = () => api('/me/watchlist')
+export const getTags = () => api('/me/tags')
+export const getRatedMovies = () => api('/me/ratings')
+export const addFavorite = id => api(`/me/favorites/${id}`, { method: 'POST' })
+export const removeFavorite = id => api(`/me/favorites/${id}`, { method: 'DELETE' })
+export const addToWatchlist = id => api(`/me/watchlist/${id}`, { method: 'POST' })
+export const removeFromWatchlist = id => api(`/me/watchlist/${id}`, { method: 'DELETE' })
+export const addMovieTag = (id, tag) => api(`/me/tags/${id}`, { method: 'POST', body: JSON.stringify({ tag }) })
