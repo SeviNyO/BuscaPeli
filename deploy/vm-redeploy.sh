@@ -6,9 +6,21 @@ test -f .env
 git fetch --quiet origin main
 git merge --ff-only origin/main
 
+if test -s /etc/letsencrypt/live/buscapeli.duckdns.org/fullchain.pem; then
+    if ! cmp -s deploy/nginx.conf /etc/nginx/sites-available/buscapeli; then
+        sudo install -m 0644 deploy/nginx.conf /etc/nginx/sites-available/buscapeli
+        sudo nginx -t
+        sudo systemctl reload nginx
+    fi
+fi
+
 revision="$(git rev-parse HEAD)"
-if test -f .deployed-revision && test "$(<.deployed-revision)" = "$revision" && test "$(docker compose ps --status running --services | wc -l)" -eq 3; then
-    exit 0
+if test -f .deployed-revision && test "$(docker compose ps --status running --services | wc -l)" -eq 3; then
+    deployed="$(<.deployed-revision)"
+    if test "$deployed" = "$revision" || git diff --quiet "$deployed" "$revision" -- backend frontend csv docker-compose.yml; then
+        printf '%s\n' "$revision" > .deployed-revision
+        exit 0
+    fi
 fi
 
 docker compose up -d --build

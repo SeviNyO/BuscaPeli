@@ -9,12 +9,12 @@ BuscaPeli es una aplicación web de recomendación de películas construida sobr
 | Capa | Tecnología | Responsabilidad |
 | --- | --- | --- |
 | Interfaz | Vue 3, Vite | Pantallas, navegación, cliente REST y estado de sesión. |
-| Servidor web | Nginx | Entrega el frontend y redirige `/api/` al backend. En la VM, otro Nginx recibe el tráfico público por el puerto 80. |
+| Servidor web | Nginx | Entrega el frontend y redirige `/api/` al backend. En la VM, otro Nginx recibe el tráfico público por HTTPS y redirige las solicitudes HTTP. |
 | API | Spring Boot 3, Java 17 | Sesiones, acceso a datos, importación y recomendaciones. |
 | Persistencia | PostgreSQL 16, Flyway | Catálogo MovieLens, cuentas y datos propios de cada usuario. |
 | Metadatos | API de TMDB | Pósteres, fondos, sinopsis y reparto cuando existe `tmdb_id` y se configura la clave. |
 
-El despliegue utiliza Docker Compose con tres servicios: `frontend`, `backend` y `db`. Solo el servidor web expone un puerto; el backend y PostgreSQL permanecen en la red interna de Compose. En la VM el puerto de Compose se vincula a `127.0.0.1:8088` y Nginx publica la aplicación en el puerto 80.
+El despliegue utiliza Docker Compose con tres servicios: `frontend`, `backend` y `db`. Solo el servidor web expone un puerto; el backend y PostgreSQL permanecen en la red interna de Compose. En la VM el puerto de Compose se vincula a `127.0.0.1:8088` y Nginx publica la aplicación en los puertos 80 y 443.
 
 ## Organización del repositorio
 
@@ -53,7 +53,7 @@ Las verificaciones independientes del despliegue se ejecutan con `mvn test` desd
 
 ## Despliegue y operación en la VM
 
-La instalación de referencia reside en `/home/ubuntu/BuscaPeli` y se accede por `http://18.225.216.165/`. El archivo `.env` de la VM debe incluir una contraseña propia, `HTTP_BIND=127.0.0.1`, `HTTP_PORT=8088` y `JAVA_TOOL_OPTIONS=-Xmx384m`. Se reserva 1 GiB de intercambio para compilar en instancias de memoria reducida.
+La instalación de referencia reside en `/home/ubuntu/BuscaPeli` y se accede por <https://buscapeli.duckdns.org/>. Las solicitudes a `http://buscapeli.duckdns.org/` y a la IP pública se redirigen al dominio HTTPS. El archivo `.env` de la VM debe incluir una contraseña propia, `HTTP_BIND=127.0.0.1`, `HTTP_PORT=8088`, `JAVA_TOOL_OPTIONS=-Xmx384m` y `COOKIE_SECURE=true`. Se reserva 1 GiB de intercambio para compilar en instancias de memoria reducida.
 
 `deploy/setup-vm.sh` configura Docker, Nginx y el servicio `buscapeli-deploy.service`. El timer `buscapeli-deploy.timer` comprueba `origin/main` cada cinco minutos; `deploy/vm-redeploy.sh` actualiza el checkout con avance rápido, reconstruye los contenedores cuando cambia el commit y registra la versión desplegada después de comprobar la salud de la API. La base permanece en su volumen entre despliegues.
 
@@ -64,7 +64,7 @@ journalctl -u buscapeli-deploy.service -n 80 --no-pager
 docker compose ps
 ```
 
-El servidor publica HTTP por IP. Para un dominio se debe cambiar `server_name` en `deploy/nginx.conf`, crear el registro DNS y emitir un certificado TLS para ese dominio; entonces se configura `COOKIE_SECURE=true`. El acceso HTTPS confiable no se configura con una IP sin dominio.
+`deploy/enable-https.sh` emite un certificado Let's Encrypt mediante el desafío HTTP-01, instala la configuración TLS de Nginx y activa la renovación periódica de `certbot.timer`. El hook `deploy/reload-nginx.sh` recarga Nginx tras cada renovación. `deploy/nginx-bootstrap.conf` sirve temporalmente el desafío HTTP antes de la primera emisión. La clave privada y el certificado residen únicamente en `/etc/letsencrypt` de la VM.
 
 ## Datos externos
 

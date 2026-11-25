@@ -24,7 +24,11 @@ if ! swapon --show | grep -q .; then
     fi
 fi
 
-sudo install -m 0644 deploy/nginx.conf /etc/nginx/sites-available/buscapeli
+if sudo test -s /etc/letsencrypt/live/buscapeli.duckdns.org/fullchain.pem; then
+    sudo install -m 0644 deploy/nginx.conf /etc/nginx/sites-available/buscapeli
+else
+    sudo install -m 0644 deploy/nginx-bootstrap.conf /etc/nginx/sites-available/buscapeli
+fi
 sudo ln -sfn /etc/nginx/sites-available/buscapeli /etc/nginx/sites-enabled/buscapeli
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
@@ -35,3 +39,4 @@ sudo install -m 0644 deploy/buscapeli-deploy.timer /etc/systemd/system/buscapeli
 sudo systemctl daemon-reload
 sudo systemctl enable --now buscapeli-deploy.timer
 sudo systemctl start buscapeli-deploy.service
+bash deploy/enable-https.sh
