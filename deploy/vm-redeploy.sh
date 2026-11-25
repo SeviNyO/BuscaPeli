@@ -15,7 +15,8 @@ docker compose up -d --build
 for attempt in $(seq 1 90); do
     if curl -fsS --max-time 5 http://127.0.0.1:8088/api/v1/health | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["movies"] == 1500 and d["ratings"] > 0' 2>/dev/null; then
         printf '%s\n' "$revision" > .deployed-revision
-        docker builder prune -f --filter 'until=168h' >/dev/null
+        docker builder prune -af >/dev/null
+        docker image prune -f >/dev/null
         exit 0
     fi
     sleep 5
