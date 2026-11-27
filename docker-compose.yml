@@ -17,13 +17,15 @@ services:
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-buscapeli}
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-buscapeli}
       DATABASE_USER: ${POSTGRES_USER:-buscapeli}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-buscapeli-local}
       MOVIELENS_DATA_DIR: /app/csv
       TMDB_API_KEY: ${TMDB_API_KEY:-}
-      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SESSION_SECRET: ${SESSION_SECRET:-}
       MIN_COMMON_MOVIES: ${MIN_COMMON_MOVIES:-2}
       TARGET_COMMUNITIES: ${TARGET_COMMUNITIES:-20}
     volumes:

@@ -1,45 +1,34 @@
 # BuscaPeli
 
-## Descripción
-
-BuscaPeli es una aplicación web de recomendación de películas construida sobre MovieLens Small. Relaciona usuarios y películas mediante un grafo bipartito ponderado; un segundo grafo relaciona películas y géneros. La interfaz permite buscar títulos, consultar información de TMDB, calificar películas, guardar favoritos y consultar recomendaciones explicables.
+BuscaPeli recomienda películas de MovieLens Small con dos grafos bipartitos: usuario–película y película–género. La interfaz permite buscar títulos, consultar metadatos de TMDB, calificar películas, gestionar listas y obtener recomendaciones explicables.
 
 ## Arquitectura
 
 | Capa | Tecnología | Responsabilidad |
 | --- | --- | --- |
-| Interfaz | Vue 3, Vite | Pantallas, navegación, cliente REST y estado de sesión. |
-| Servidor web | Nginx | Entrega el frontend y redirige `/api/` al backend. En la VM, otro Nginx recibe el tráfico público por HTTPS y redirige las solicitudes HTTP. |
-| API | Spring Boot 3, Java 17 | Sesiones, acceso a datos, importación y recomendaciones. |
-| Persistencia | PostgreSQL 16, Flyway | Catálogo MovieLens, cuentas y datos propios de cada usuario. |
-| Metadatos | API de TMDB | Pósteres, fondos, sinopsis y reparto cuando existe `tmdb_id` y se configura la clave. |
+| Interfaz | Vue 3, Vite | Pantallas, navegación y cliente REST. |
+| Servidor web | Nginx | Entrega Vue y proxy de `/api/` hacia la API. |
+| API | Python 3.12, FastAPI | Sesión/CSRF, importación, acceso a datos y recomendaciones. |
+| Persistencia | PostgreSQL 16, Psycopg 3 | MovieLens, cuentas y datos propios de cada cuenta. |
+| Metadatos | TMDB API opcional | Póster, sinopsis, fecha y reparto. |
 
-El despliegue utiliza Docker Compose con tres servicios: `frontend`, `backend` y `db`. Solo el servidor web expone un puerto; el backend y PostgreSQL permanecen en la red interna de Compose. En la VM el puerto de Compose se vincula a `127.0.0.1:8088` y Nginx publica la aplicación en los puertos 80 y 443.
+Docker Compose ejecuta `frontend`, `backend` y `db`; PostgreSQL y la API no publican puertos al exterior. En la VM, Nginx sirve HTTPS y proxy a `127.0.0.1:8088`.
 
-## Organización del repositorio
+## Datos MovieLens
 
-```text
-backend/                     API Spring Boot, algoritmos, pruebas y migraciones Flyway
-csv/                         Archivos originales movies, ratings, tags y links
-deploy/                      Configuración Nginx, instalación y unidades systemd de la VM
-frontend/                    Aplicación Vue, cliente HTTP y componentes
-docker-compose.yml           Servicios PostgreSQL, backend y frontend
-.env.example                 Variables de entorno sin credenciales
-```
-
-Al primer inicio, Flyway crea el esquema y el importador selecciona las 1 500 películas más calificadas, junto a los usuarios con al menos cinco valoraciones en ese conjunto. Se obtienen 610 usuarios y 71 523 calificaciones. La importación no se repite cuando la tabla de películas ya contiene datos. PostgreSQL mantiene sus datos en el volumen `postgres_data`.
+Al primer inicio se importan los CSV originales de `csv/`: las 1.500 películas más populares, ratings de usuarios con al menos cinco calificaciones de ese grupo y sus tags. `links.csv` aporta `tmdbId`. La importación se omite cuando `movies` ya contiene datos. Ratings y etiquetas MovieLens permanecen separados de las cuentas y sus listas.
 
 ## Recomendaciones
 
-- **Para ti — `GET /api/v1/recommendations/me`:** parte de hasta cinco películas que la cuenta calificó con al menos 4 estrellas. Combina candidatas de la recomendación colaborativa y elimina películas que sirvieron como punto de partida. Sin valoraciones suficientes presenta películas populares.
-- **Película elegida — `GET /api/v1/recommendations/movies/{id}`:** BFS encuentra películas bien calificadas por usuarios que también valoraron positivamente la película inicial; Kruskal y UFDS forman comunidades globales, Bellman-Ford calcula el costo de afinidad y Merge Sort ordena los resultados.
-- **Por género — `GET /api/v1/recommendations/movies/{id}/by-genre`:** BFS busca películas que comparten géneros con la seleccionada; Merge Sort prioriza la cantidad de géneros compartidos y la calificación promedio.
+- **Para ti** (`GET /api/v1/recommendations/me`): usa hasta cinco películas que la cuenta calificó con 4 o más; combina recomendaciones colaborativas y excluye las películas semilla. Si no hay ratings suficientes, ofrece populares.
+- **Colaborativa** (`GET /api/v1/recommendations/movies/{id}`): BFS recorre el grafo usuario–película; Kruskal y UFDS precalculan comunidades globales; Bellman-Ford calcula afinidad `5.5 - rating`; Merge Sort ordena por costo y el voraz retorna top-N.
+- **Por género** (`GET /api/v1/recommendations/movies/{id}/by-genre`): BFS explora película–género, Merge Sort prioriza géneros compartidos y rating promedio, y el voraz selecciona top-N.
 
-La interfaz también consulta `/api/v1/movies`, `/api/v1/movies/popular`, `/api/v1/movies/top-rated`, `/api/v1/movies/{id}/details` y `/api/v1/movies/{id}/poster`. Las cuentas y colecciones usan `/api/v1/auth/*` y `/api/v1/me/*`. El estado del catálogo puede consultarse en `GET /api/v1/health`.
+Los algoritmos están en `backend/app/algorithms/`, separados de FastAPI y PostgreSQL. Se adaptaron a la estructura de listas de adyacencia de los notebooks del curso. Tags se persisten, pero no participan del recomendador.
 
 ## Ejecución local
 
-Se requiere Docker Engine con el complemento Compose. Copiar `.env.example` a `.env`, definir `POSTGRES_PASSWORD` y, si se requieren imágenes y metadatos, `TMDB_API_KEY`. `.env` no forma parte del repositorio.
+Requisitos: Docker Engine y Docker Compose. Copia `.env.example` a `.env`, cambia `POSTGRES_PASSWORD` y `SESSION_SECRET`; `TMDB_API_KEY` es opcional.
 
 ```bash
 cp .env.example .env
@@ -47,15 +36,17 @@ docker compose up -d --build
 docker compose ps
 ```
 
-La interfaz queda en <http://localhost:8088> y el estado de la API en <http://localhost:8088/api/v1/health>. El primer arranque incluye la importación del dataset. Para detener los servicios se utiliza `docker compose down`; la opción `-v` elimina el volumen de PostgreSQL y exige una nueva importación.
+Interfaz: <http://localhost:8088>. Salud de API: <http://localhost:8088/api/v1/health>. Para apagar, `docker compose down`; evita `-v` si quieres conservar PostgreSQL. FastAPI/Swagger: <http://localhost:8088/docs>.
 
-Las verificaciones independientes del despliegue se ejecutan con `mvn test` desde `backend/` y con `npm ci`, `npm run test:unit -- --run` y `npm run build` desde `frontend/`.
+Pruebas de algoritmos: desde la raíz, `PYTHONPATH=backend python -m unittest discover -s backend/tests -v`.
 
-## Despliegue y operación en la VM
+## Despliegue en la VM
 
-La instalación de referencia reside en `/home/ubuntu/BuscaPeli` y se accede por <https://buscapeli.duckdns.org/>. Las solicitudes a `http://buscapeli.duckdns.org/` y a la IP pública se redirigen al dominio HTTPS. El archivo `.env` de la VM debe incluir una contraseña propia, `HTTP_BIND=127.0.0.1`, `HTTP_PORT=8088`, `JAVA_TOOL_OPTIONS=-Xmx384m` y `COOKIE_SECURE=true`. Se reserva 1 GiB de intercambio para compilar en instancias de memoria reducida.
+El repositorio está configurado para `https://buscapeli.duckdns.org/`. La VM `/home/ubuntu/BuscaPeli` comprueba `origin/main` cada cinco minutos con `buscapeli-deploy.timer`; tras un push, `deploy/vm-redeploy.sh` hace fast-forward, reconstruye Compose y verifica `/api/v1/health` antes de marcar la revisión desplegada. `deploy/setup-vm.sh` configura Docker y Nginx; `deploy/enable-https.sh` gestiona TLS con Let's Encrypt.
 
-`deploy/setup-vm.sh` configura Docker, Nginx y el servicio `buscapeli-deploy.service`. El timer `buscapeli-deploy.timer` comprueba `origin/main` cada cinco minutos; `deploy/vm-redeploy.sh` actualiza el checkout con avance rápido, reconstruye los contenedores cuando cambia el commit y registra la versión desplegada después de comprobar la salud de la API. La base permanece en su volumen entre despliegues.
+El `.env` privado de la VM debe conservar `POSTGRES_PASSWORD`, definir un `SESSION_SECRET` propio y usar `HTTP_BIND=127.0.0.1`, `HTTP_PORT=8088` y `COOKIE_SECURE=true`. Si `SESSION_SECRET` no está definido, el backend deriva una clave estable de las credenciales privadas de PostgreSQL. No publiques el `.env` ni secretos en Git.
+
+Operación:
 
 ```bash
 sudo systemctl status buscapeli-deploy.timer
@@ -64,8 +55,4 @@ journalctl -u buscapeli-deploy.service -n 80 --no-pager
 docker compose ps
 ```
 
-`deploy/enable-https.sh` emite un certificado Let's Encrypt mediante el desafío HTTP-01, instala la configuración TLS de Nginx y activa la renovación periódica de `certbot.timer`. El hook `deploy/reload-nginx.sh` recarga Nginx tras cada renovación. `deploy/nginx-bootstrap.conf` sirve temporalmente el desafío HTTP antes de la primera emisión. La clave privada y el certificado residen únicamente en `/etc/letsencrypt` de la VM.
-
-## Datos externos
-
-MovieLens Small pertenece a GroupLens Research. La API de TMDB aporta metadatos visuales, pero no interviene en los algoritmos de recomendación. BuscaPeli no está avalada por TMDB.
+MovieLens pertenece a GroupLens. Los metadatos TMDB no intervienen en los algoritmos; BuscaPeli no está avalada por TMDB.
